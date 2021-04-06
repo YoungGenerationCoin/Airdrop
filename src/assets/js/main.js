@@ -214,28 +214,3 @@ function ScrollToAirdrop() {
 };
 airdropButton.onclick = function() { ScrollToAirdrop(); };
 buttonGetStart.onclick = function() { ScrollToAirdrop(); };
-
-
-var copyLink = document.getElementById('copy-link');
-var linkRef = document.getElementById('ref-link');
-
-copyLink.onclick = function () {
-  var text = linkRef.innerText;
-  var elem = document.createElement("textarea");
-  document.body.appendChild(elem);
-  elem.value = text;
-  elem.select();
-  document.execCommand("copy");
-  document.body.removeChild(elem);
-}
-
-linkRef.onclick = function () {
-  var text = linkRef.innerText;
-  var elem = document.createElement("textarea");
-  document.body.appendChild(elem);
-  elem.value = text;
-  elem.select();
-  document.execCommand("copy");
-  document.body.removeChild(elem);
-  return false;
-}

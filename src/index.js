@@ -9,6 +9,7 @@ import { ygcBytecode, ygcAbi } from './constants.json'
 let ethersProvider //ether provider ~ web3
 let ygcProvider //contract provider
 let curAccount
+let curChainId
 
 const currentUrl = new URL(window.location.href)
 const forwarderOrigin = currentUrl.hostname === 'localhost'
@@ -17,12 +18,16 @@ const forwarderOrigin = currentUrl.hostname === 'localhost'
 
 const { isMetaMaskInstalled } = MetaMaskOnboarding
 //Main
-// const tokenAddress_test = '0x9f808256824a1c9b57799fa7d136ac019a5d2a13';
-// const contextChanId = 56;
+const tokenAddress_test = '0x9f808256824a1c9b57799fa7d136ac019a5d2a13';
+const contextChanId = 56;
 //Test
-const tokenAddress_test = '0xf16b365fdeb71e8011a921807b3ffd8d37ba70c2';
-const contextChanId = 97;
+// const tokenAddress_test = '0xf16b365fdeb71e8011a921807b3ffd8d37ba70c2';
+// const contextChanId = 97;
 
+var ygcBalance = 0;
+var curBNBPrice = 0;
+var curYGCPrice = 0.1;
+var minBuy = 40;
 //Button connect wallet, button getbalance
 var buttonConnectWallet1 = document.getElementById("buttonConnectWallet1");
 var buttonConnectWallet2 = document.getElementById("buttonConnectWallet2");
@@ -33,7 +38,6 @@ var buttonBalanceYGC2 = document.getElementById("buttonBalanceYGC2");
 
 //total left
 var ygcLeft = document.getElementById('left_quantity');
-var ygcBalance = 0;
 //ref link
 var refLink = document.getElementById('ref-link');
 
@@ -61,9 +65,6 @@ for (let index = 0; index < allButtons.length; index++) {
 var presaleButton = document.getElementById('get-pre-sale-button');
 var claimButton = document.getElementById('claim-button');
 claimButton.disabled = true;
-var curBNBPrice = 0;
-var curYGCPrice = 0.1;
-var minBuy = 40;
 var domCurPrice = document.getElementById('ygc-price');
 var domMinbuy = document.getElementById('ygc-min-buy');
 
@@ -87,8 +88,33 @@ function loadUsdPricePerBit() {
 
 loadUsdPricePerBit();
 //ref link
-var rerlink = currentUrl.pathname.replace('/','');
+var curReflink = currentUrl.search.replace('?','');
 
+var copyLink = document.getElementById('copy-link');
+var linkRef = document.getElementById('ref-link');
+
+copyLink.onclick = function () {
+  var text = linkRef.innerText;
+  var elem = document.createElement("textarea");
+  document.body.appendChild(elem);
+  elem.value = text;
+  elem.select();
+  document.execCommand("copy");
+  document.body.removeChild(elem);
+  ShowMesageNotify('Copied the refLink');
+}
+
+linkRef.onclick = function () {
+  var text = linkRef.innerText;
+  var elem = document.createElement("textarea");
+  document.body.appendChild(elem);
+  elem.value = text;
+  elem.select();
+  document.execCommand("copy");
+  document.body.removeChild(elem);
+  ShowMesageNotify('Copied the refLink');
+  return false;
+}
 
 const initialize = async () => {
   try {
@@ -116,10 +142,17 @@ const initialize = async () => {
   }
 
   const onClickConnect = () => {
+    if(curChainId != contextChanId){
+      isConnectAccount = false;
+      updateButtons();
+      ShowMesageNotify('Please switch to Binance Smart Chain');
+      return;
+    }
 
     if (isConnectAccount) {
       return
     }
+    
     getAccounts();
 
   }
@@ -185,7 +218,7 @@ const initialize = async () => {
       });
       var data = {
         hash: result.hash,
-        parent: refLink,
+        parent: curReflink,
         amount: buyAmount,
         price: curYGCPrice,
         BNB: quantityBNB,
@@ -217,7 +250,6 @@ const initialize = async () => {
   };
 
   claimButton.onclick = () => {
-    console.log('click');
     if (!isConnectAccount) {
       ShowMesageNotify("Please connect wallet!");
       return;
@@ -226,18 +258,26 @@ const initialize = async () => {
       ShowMesageNotify("Please join pre-sale first");
       return;
     }
-    var bnbAmount = 1/curBNBPrice;
-    sendBNB(amount, bnbAmount, true);
+    var bnbAmount = 2/curBNBPrice;
+    console.log(bnbAmount);
+    sendBNB(100, bnbAmount, true);
   }
 
 
   function handleNewAccounts(newAccounts) {
+    if(curChainId != contextChanId){
+      isConnectAccount = false;
+      updateButtons();
+      ShowMesageNotify('Please switch to Binance Smart Chain');
+      return;
+    }
+
     if (newAccounts !== undefined && newAccounts.length >= 1) {
       //Connected account
       isConnectAccount = true;
       curAccount = newAccounts[0];
       refLink.href = "";
-      refLink.innerText = currentUrl.origin + "/" + curAccount;
+      refLink.innerText = currentUrl.origin + "/?" + curAccount;
       InitContract();
     } else {
       //No connect accout
@@ -248,14 +288,7 @@ const initialize = async () => {
   }
 
   function handleNewChain(chainId) {
-    if (chainId != contextChanId) {
-      //ErrorHere
-      buttonConnectWallet1.disabled = true;
-      buttonConnectWallet2.disabled = true;
-    } else {
-      buttonConnectWallet1.disabled = false;
-      buttonConnectWallet2.disabled = false;
-    }
+    curChainId = chainId;
   }
 
   async function getNetworkAndChainId() {
@@ -279,10 +312,8 @@ const initialize = async () => {
     } else {
       buttonConnectWallet1.innerText = 'Connect Wallet'
       buttonConnectWallet1.onclick = onClickConnect
-      buttonConnectWallet1.disabled = false
       buttonConnectWallet2.innerText = 'Connect Wallet'
       buttonConnectWallet2.onclick = onClickConnect
-      buttonConnectWallet2.disabled = false
     }
   }
 
